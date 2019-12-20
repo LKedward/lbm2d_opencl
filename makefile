@@ -54,7 +54,7 @@ clean: focal_clean
 	rm -f $(BINDIR)*
 
 # Programs depend on modules
-$(PROGOBJS): $(MODOBJS) 
+$(PROGOBJS): $(MODOBJS) $(FOCAL_LIB_OBJS)
 
 $(EXEC): $(FOCAL_LIB_OBJS)
 
