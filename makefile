@@ -30,6 +30,7 @@ DIRS = $(MODDIR) $(BINDIR) $(OBJDIR)
 # --- Compiler Flags ---
 include make.compiler
 
+
 # --- Link Flags ---
 ifeq ($(BUILD), release)
     FOCAL_LFLAGS ?= -L$(FOCAL_DIR)/lib -lfocal
@@ -45,16 +46,17 @@ LFLAGS = $(FOCAL_LFLAGS) $(OPENCL_LFLAGS)
 all: $(DIRS) $(EXEC)
 
 include $(FOCAL_DIR)/make.include
+FFLAGS+=-I$(FOCAL_MODDIR)
 
 # --- Cleanup (reset) ---
-clean: focal_clean
+clean: 
 	rm -f $(OBJDIR)*.o
 	rm -f $(MODDIR)*.mod
 	rm -f $(MODDIR)*.smod
 	rm -f $(BINDIR)*
 
 # Programs depend on modules
-$(PROGOBJS): $(MODOBJS) $(FOCAL_LIB_OBJS)
+$(PROGOBJS): $(MODOBJS)
 
 $(EXEC): $(FOCAL_LIB_OBJS)
 
@@ -62,8 +64,8 @@ $(EXEC): $(FOCAL_LIB_OBJS)
 $(MODOBJS): $(HEADEROBJS)
 
 # Recipe to link executables
-$(BINDIR)%: $(addprefix $(OBJDIR), %.o fclKernels.o) $(MODOBJS) $(HEADEROBJS)
-	$(FC) $^ $(LFLAGS) -o $@
+$(BINDIR)%: $(addprefix $(OBJDIR), %.o fclKernels.o) $(MODOBJS) $(HEADEROBJS) $(FOCAL_LIB_OBJS)
+	$(FC) $(addprefix $(OBJDIR), $*.o fclKernels.o) $(MODOBJS) $(HEADEROBJS) $(LFLAGS) -o $@
 
 # Recipe to compile fortran objects
 $(OBJDIR)%.o: %.f90
