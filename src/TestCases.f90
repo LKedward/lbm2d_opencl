@@ -5,17 +5,6 @@ module LBM_Test_Cases
 use iso_fortran_env, only: sp=> real32
 implicit none
 
-! type LBMCase
-!   !! Structure type for encapsulating run case definitions
-!   integer :: ni, nj                        !! Grid dimensions
-!   integer :: npts                          !! Always ni*nj
-!   real(sp) :: dx                           !! Grid spacing
-!   real(sp) :: dt                           !! Time step
-!   real(sp) :: tau                          !! Viscous relaxation parameter
-!   integer, allocatable :: bcFlags(:)       !! Boundary condition flags (ni x nj)
-!   real(sp), allocatable :: velocities(:)   !! Velocity boundary condition vectors (2 x n)
-! end type LBMCase
-
 contains
 
 

@@ -51,7 +51,6 @@ real(sp), allocatable :: rho(:,:), u(:,:), v(:,:)
 ! VARS: Profiling
 integer(c_int64_t) :: collideTavg, boundariesTavg, streamTavg
 real(dp) :: Tupdate
-integer :: fh, i
 
 ! ------------------ END DECLARATIONS ------------------
 
@@ -115,7 +114,6 @@ asyncQ = fclCreateCommandQ(devices(1),enableProfiling=.true.,outOfOrderExec=.tru
 ! Load and compile OpenCL source
 call fclGetKernelResource(programSource)
 prog = fclCompileProgram(programSource) !,'-cl-nv-verbose')
-
 ! call fclDumpBuildLog(prog,devices(1))
 
 ! Calculate global work size as multiple of desired block size
@@ -220,23 +218,5 @@ if (saveFreq > 0) then
   end  if
 end if
 
-
-! open(newunit=fh,file='trace',status='unknown')
-
-! write(fh,*) '['
-! call fclDumpTracingData(fh,collideK)
-! write(fh,*) ','
-! call fclDumpTracingData(fh,boundariesK)
-! write(fh,*) ','
-! call fclDumpTracingData(fh,streamK)
-! write(fh,*) ','
-! call fclDumpTracingData(fh,calcVarsK)
-! write(fh,*) ','
-! call fclDumpTracingData(fh,rho_d)
-! write(fh,*) ','
-! call fclDumpTracingData(fh,u_d)
-! write(fh,*) ','
-! call fclDumpTracingData(fh,v_d)
-! write(fh,*) ']'
 
 end program lbmocl
