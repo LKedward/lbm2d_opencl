@@ -30,6 +30,8 @@ DIRS = $(MODDIR) $(BINDIR) $(OBJDIR)
 # --- Compiler Flags ---
 include make.compiler
 
+
+
 # --- Link Flags ---
 ifeq ($(BUILD), release)
     FOCAL_LFLAGS ?= -L$(FOCAL_DIR)/lib -lfocal
@@ -45,6 +47,8 @@ LFLAGS = $(FOCAL_LFLAGS) $(OPENCL_LFLAGS)
 all: $(DIRS) $(EXEC)
 
 include $(FOCAL_DIR)/make.include
+FFLAGS+= -I$(FOCAL_MODDIR)
+
 
 # --- Cleanup (reset) ---
 clean: focal_clean
