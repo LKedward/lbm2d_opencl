@@ -1,5 +1,4 @@
 *.plt
-*.cfg
 fclKernels.cl
 mod/*
 obj/*
