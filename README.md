@@ -2,7 +2,7 @@
 
 An OpenCL demonstration code making use of the [Focal](https://github.com/LKedward/focal) OpenCL abstraction library for Fortran.
 
-![D2Q9 Lattice Boltzmann](https://raw.githubusercontent.com/LKedward/lbm2d_opencl/master/cylinder_flow.gif "D2Q9 Lattice Boltzmann")
+![D2Q9 Lattice Boltzmann](https://github.com/LKedward/lbm2d_opencl/blob/master/cylinder_flow.gif "D2Q9 Lattice Boltzmann")
 
 ## Getting started
 
