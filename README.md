@@ -4,8 +4,9 @@ An OpenCL demonstration code making use of the [Focal](https://github.com/LKedwa
 
 ![D2Q9 Lattice Boltzmann](https://raw.githubusercontent.com/LKedward/lbm2d_opencl/master/cylinder_flow.gif "D2Q9 Lattice Boltzmann")
 
+## Getting started
 
-## Prerequisites
+### Prerequisites
 
 - A modern fortran compiler supporting the 2008 standard (tested with gfortran 9.1.0)
 - An openCL development library (One of:
@@ -14,7 +15,7 @@ An OpenCL demonstration code making use of the [Focal](https://github.com/LKedwa
 [AMD OpenCL SDK](https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/releases) )
 
 
-## Download
+### Download
 
 This project makes use of [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) to bundle a library dependency.
 
@@ -26,7 +27,7 @@ $> git submodule init
 $> git submodule update
 ```
 
-## Build
+### Build
 
 To compile, navigate to the repository directory and run `make`:
 
@@ -51,7 +52,7 @@ $> make -j OPENCL_DIR=/path/to/OpenCL/lib/
 *This should not be necessary on Linux platforms if the OpenCL development library is installed correctly*
 
 
-## Run
+### Run
 
 To run the compiled program:
 
@@ -95,4 +96,16 @@ The following options override parameters defined by the built-in test cases:
 `TAU`: (*float*) overrides test case relaxation parameter.
 
 
+## About the code
+
+### Files and directories
+
+- `./src/lbmocl.f90`: main program code
+- `./src/kernels.cl`: OpenCL C kernel code implementing the lattice Boltzmann method
+- `./src/UserInput.f90`: module for processing user inputs from configuration file
+- `./src/TecplotOutput.f90`: module for writing solutions to tecplot files
+- `./external/`: directory containing code for external libraries
+- `./makefile`: makefile
+- `./make.compiler`: defines compiler flags, 'included' in `makefile`
+- `./lbm.cfg`: example configuration file containing parameter defaults
 
