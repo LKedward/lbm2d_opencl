@@ -39,6 +39,7 @@ type(fclCommandQ) :: asyncQ
 type(fclProgram) :: prog
 type(fclKernel) :: initK, collideK, boundariesK, streamK, calcVarsK
 type(fclEvent) :: depends(2)
+type(fclProfiler) :: profiler
 
 ! VARS: Device buffers
 type(fclDeviceFloat) :: distFun_d, distFun2_d, velocities_d
@@ -108,6 +109,9 @@ write(*,'(A,I6,A,I6,A,I4,A,A,A)') '    (', devices(1)%nComputeUnits,' cores, ', 
     devices(1)%version,')'
 write(*,*) ''
 
+! Setup profiler
+profiler%device = devices(1)
+
 ! Create an additional asynchronous command queue for host transfers
 asyncQ = fclCreateCommandQ(devices(1),enableProfiling=.true.,outOfOrderExec=.true.,blockingRead=.false.)
 
@@ -121,25 +125,28 @@ blockSize = [64,1]
 globalSize(1) = (ni/blockSize(1) + min(1,mod(ni,blockSize(1))))*blockSize(1)
 globalSize(2) = (nj/blockSize(2) + min(1,mod(nj,blockSize(2))))*blockSize(2)
 
-initK = fclGetProgramKernel(prog,'initialise',globalSize,blockSize,profileSize=nIter)
-collideK = fclGetProgramKernel(prog,'collide',globalSize,blockSize,profileSize=nIter)
-boundariesK = fclGetProgramKernel(prog,'boundaryConditions',globalSize,blockSize,profileSize=nIter)
-streamK = fclGetProgramKernel(prog,'stream',globalSize,blockSize,profileSize=nIter)
-calcVarsK = fclGetProgramKernel(prog,'macroVars',globalSize,blockSize,profileSize=nIter)
+initK = fclGetProgramKernel(prog,'initialise',globalSize,blockSize)
+collideK = fclGetProgramKernel(prog,'collide',globalSize,blockSize)
+boundariesK = fclGetProgramKernel(prog,'boundaryConditions',globalSize,blockSize)
+streamK = fclGetProgramKernel(prog,'stream',globalSize,blockSize)
+calcVarsK = fclGetProgramKernel(prog,'macroVars',globalSize,blockSize)
 
+call profiler%add(nIter,initK,collideK,boundariesK,streamK,calcVarsK)
 
 ! Initialise buffers on device
 distFun_d = fclBufferFloat(q*npts,read=.true.,write=.true.)
 distFun2_d = fclBufferFloat(q*npts,read=.true.,write=.true.)
 velocities_d = fclBufferFloat(size(velocities,1),read=.true.,write=.false.)
 rho_d = fclBufferFloat(asyncQ,npts,read=.false.,write=.true., &
-                        profileSize=nSave,profileName='rho_d')
+                        profileName='rho_d')
 u_d = fclBufferFloat(asyncQ,npts,read=.false.,write=.true., &
-                        profileSize=nSave,profileName='u_d')
+                        profileName='u_d')
 v_d = fclBufferFloat(asyncQ,npts,read=.false.,write=.true., &
-                        profileSize=nSave,profileName='v_d')
+                        profileName='v_d')
 bcFlags_d = fclBufferInt32(npts,read=.true.,write=.false., &
-                        profileSize=1,profileName='bcFlags_d')
+                        profileName='bcFlags_d')
+
+call profiler%add(nSave,rho_d,u_d,v_d,bcFlags_d)
 
 ! Transfer boundary condition data to device
 bcFlags_d = bcFlags
@@ -196,8 +203,8 @@ call fclWait()
 call fclWait(asyncQ)
 
 ! Calculate and print out profiling data
-call fclDumpProfileData([initK,collideK,boundariesK,streamK,calcVarsK],devices(1))
-call fclDumpProfileData([velocities_d,rho_d,u_d,v_d],[bcFlags_d])
+call fclDumpProfileData(profiler)
+call fclDumpTracingData(profiler,'lbm.trace')
 
 ! Calculate performance in MLUPS
 ! (Million lattice updates per second)
