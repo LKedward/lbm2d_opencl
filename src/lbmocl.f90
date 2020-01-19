@@ -5,7 +5,6 @@ use LBM_User_Input, only: getUserInput, printConfiguration
 use LBM_Tecplot_Output
 use Focal
 use iso_fortran_env, only: sp=>real32, dp=>real64
-use iso_c_binding, only: c_int64_t
 implicit none
 
 ! ------------------ VARIABLE DECLARATIONS ------------------
@@ -47,7 +46,7 @@ type(fclDeviceFloat) :: rho_d, u_d, v_d
 type(fclDeviceInt32) :: bcFlags_d
 
 ! VARS: Host arrays
-real(sp), allocatable :: rho(:,:), u(:,:), v(:,:)
+real(sp), pointer :: rho(:,:), u(:,:), v(:,:)
 
 ! VARS: Profiling
 integer(c_int64_t) :: collideTavg, boundariesTavg, streamTavg
@@ -90,10 +89,6 @@ omega = dt/tau;        ! Relaxation coefficient
 call printConfiguration(caseNum,ni,nj,nIter,saveFreq,outputFile,outputMode,&
   dx, dt, tau)
 
-! Allocate host arrays
-allocate(rho(npts,nSave))
-allocate(u(npts,nSave))
-allocate(v(npts,nSave))
 
 ! Create context with specified vendor
 call fclSetDefaultContext(fclCreateContext(vendor=trim(adjustl(cl_vendor))))
@@ -114,6 +109,15 @@ profiler%device = devices(1)
 
 ! Create an additional asynchronous command queue for host transfers
 asyncQ = fclCreateCommandQ(devices(1),enableProfiling=.true.,outOfOrderExec=.true.,blockingRead=.false.)
+
+! Allocate host arrays using pinned (non-paged) memory
+call fclAllocHost(rho,[npts,nSave])
+call fclAllocHost(u,[npts,nSave])
+call fclAllocHost(v,[npts,nSave])
+
+! allocate(rho(npts,nSave))
+! allocate(u(npts,nSave))
+! allocate(v(npts,nSave))
 
 ! Load and compile OpenCL source
 call fclGetKernelResource(programSource)
@@ -181,7 +185,7 @@ do it = 1,nIter
 
       ! Transfer to host using out-of-order asynchronous queue
       ! (Two dependencies: calcVars kernel and last data transfer)
-      call fclSetDependency(asyncQ,depends(2),hold=.true.)
+      call fclSetDependency(asyncQ,depends,hold=.true.)
       rho(:,it/saveFreq) = rho_d
       u(:,it/saveFreq) = u_d
       v(:,it/saveFreq) = v_d
