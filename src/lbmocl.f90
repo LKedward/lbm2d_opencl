@@ -46,7 +46,8 @@ type(fclDeviceFloat) :: rho_d, u_d, v_d
 type(fclDeviceInt32) :: bcFlags_d
 
 ! VARS: Host arrays
-real(sp), pointer :: rho(:,:), u(:,:), v(:,:)
+real(sp), pointer :: rho(:), u(:), v(:)
+real(sp), pointer :: rho2(:,:), u2(:,:), v2(:,:)
 
 ! VARS: Profiling
 integer(c_int64_t) :: collideTavg, boundariesTavg, streamTavg
@@ -111,13 +112,13 @@ profiler%device = devices(1)
 asyncQ = fclCreateCommandQ(devices(1),enableProfiling=.true.,outOfOrderExec=.true.,blockingRead=.false.)
 
 ! Allocate host arrays using pinned (non-paged) memory
-call fclAllocHost(rho,[npts,nSave])
-call fclAllocHost(u,[npts,nSave])
-call fclAllocHost(v,[npts,nSave])
+call fclAllocHost(rho,npts*nSave)
+call fclAllocHost(u,npts*nSave)
+call fclAllocHost(v,npts*nSave)
 
-! allocate(rho(npts,nSave))
-! allocate(u(npts,nSave))
-! allocate(v(npts,nSave))
+rho2(1:npts,1:nSave) => rho(:)
+u2(1:npts,1:nSave) => u(:)
+v2(1:npts,1:nSave) => v(:)
 
 ! Load and compile OpenCL source
 call fclGetKernelResource(programSource)
@@ -138,17 +139,13 @@ calcVarsK = fclGetProgramKernel(prog,'macroVars',globalSize,blockSize)
 call profiler%add(nIter,initK,collideK,boundariesK,streamK,calcVarsK)
 
 ! Initialise buffers on device
-distFun_d = fclBufferFloat(q*npts,read=.true.,write=.true.)
-distFun2_d = fclBufferFloat(q*npts,read=.true.,write=.true.)
-velocities_d = fclBufferFloat(size(velocities,1),read=.true.,write=.false.)
-rho_d = fclBufferFloat(asyncQ,npts,read=.false.,write=.true., &
-                        profileName='rho_d')
-u_d = fclBufferFloat(asyncQ,npts,read=.false.,write=.true., &
-                        profileName='u_d')
-v_d = fclBufferFloat(asyncQ,npts,read=.false.,write=.true., &
-                        profileName='v_d')
-bcFlags_d = fclBufferInt32(npts,read=.true.,write=.false., &
-                        profileName='bcFlags_d')
+call fclInitBuffer(distFun_d,q*npts)
+call fclInitBuffer(distFun2_d,q*npts)
+call fclInitBUffer(velocities_d,size(velocities,1),access='r')
+call fclInitBuffer(asyncQ,rho_d,npts,access='w',profileName='rho_d')
+call fclInitBuffer(asyncQ,u_d,npts,access='w',profileName='u_d')
+call fclInitBuffer(asyncQ,v_d,npts,access='w',profileName='v_d')
+call fclInitBuffer(bcFlags_d,npts,access='r',profileName='bcFlags_d')
 
 call profiler%add(nSave,rho_d,u_d,v_d,bcFlags_d)
 
@@ -186,9 +183,9 @@ do it = 1,nIter
       ! Transfer to host using out-of-order asynchronous queue
       ! (Two dependencies: calcVars kernel and last data transfer)
       call fclSetDependency(asyncQ,depends,hold=.true.)
-      rho(:,it/saveFreq) = rho_d
-      u(:,it/saveFreq) = u_d
-      v(:,it/saveFreq) = v_d
+      rho2(:,it/saveFreq) = rho_d
+      u2(:,it/saveFreq) = u_d
+      v2(:,it/saveFreq) = v_d
       call fclClearDependencies(asyncQ)
       call fclClearDependencies()
 
@@ -223,11 +220,15 @@ write(*,'(A,F10.2,A)') '  LBM Average performance: ',npts/(Tupdate*1d-3),' MLUPS
 if (saveFreq > 0) then
   write(*,*) 'saving...'
   if (outputMode == 1) then
-    call writePltBin(outputFile,ni,nj,nSave,1.0*saveFreq,dx,rho,u,v)
+    call writePltBin(outputFile,ni,nj,nSave,1.0*saveFreq,dx,rho2,u2,v2)
   else !if (outputMode == 2) then
-    call writePltTxt(outputFile,ni,nj,nSave,1.0*saveFreq,dx,rho,u,v)
+    call writePltTxt(outputFile,ni,nj,nSave,1.0*saveFreq,dx,rho2,u2,v2)
   end  if
 end if
 
+! Deallocate pinned arrays
+call fclFreeHost(rho)
+call fclFreeHost(u)
+call fclFreeHost(v)
 
 end program lbmocl
