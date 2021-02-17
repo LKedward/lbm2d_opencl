@@ -109,3 +109,6 @@ The following options override parameters defined by the built-in test cases:
 - `./make.compiler`: defines compiler flags, 'included' in `makefile`
 - `./lbm.cfg`: example configuration file containing parameter defaults
 
+## Acknowledgement
+
+_This work was funded by the MENtOR project, a UKVLN project supported by the Engineering and Physical Sciences Research Council (EPSRC) of the UK. Grant reference number EP/S010378/1_
